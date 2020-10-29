@@ -1,0 +1,19 @@
+version '0.1.0'
+
+apply plugin:'java'
+
+sourceSets {
+    main {
+        resources {
+            srcDir 'resources' 
+        }
+    }
+}
+
+jar {
+  manifest {
+    attributes 'Main-Class': 'controller.Main'
+  }
+  baseName = 'pop-data-reader'
+  version = '0.1.0'
+}
