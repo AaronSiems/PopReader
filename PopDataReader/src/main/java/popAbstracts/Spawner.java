@@ -1,5 +1,6 @@
 package popAbstracts;
 
+//Squad, Tank, TFBot
 public abstract class Spawner {
 	
 	protected String Name;

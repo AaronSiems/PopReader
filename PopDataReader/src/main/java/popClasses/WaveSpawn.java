@@ -4,30 +4,42 @@ import java.util.ArrayList;
 
 import popAbstracts.Populators;
 import popAbstracts.Spawner;
+import utils.TimeCalculator;
 
 public class WaveSpawn extends Populators {
 	
+	private String MapName;
 	private String Template;
 	private int TotalCount; //Default 0
 	private int MaxActive; //Default 999
 	private int SpawnCount; //Default 1
 	private float WaitBeforeStarting; //Default 0.0
+	private String WaitForAllSpawned;
+	private String WaitForAllDead;
 	private float WaitBetweenSpawns; //Default 0.0
 	private float WaitBetweenSpawnsAfterDeath; //This one or previous one not both
 	private int TotalCurrency; //Default -1
 	private String Name;
 	private String Support; //"Limited" enforces TotalCount otherwise ignored, blank disables it (default null)?
+	private ArrayList<String> Where; //I believe game defaults this to "spawnbot" if not found
 	private ArrayList<Spawner> Spawner;
+	
+	private TimeCalculator TC;
 	
 	public WaveSpawn() {
 		this.TotalCount = 0;
 		this.MaxActive = 999;
 		this.SpawnCount = 1;
 		this.WaitBeforeStarting = 0.0f;
+		this.WaitForAllSpawned = "";
+		this.WaitForAllDead = "";
 		this.WaitBetweenSpawns = 0.0f;
 		this.TotalCurrency = -1;
 		this.Support = "";
+		this.Name = "";
+		this.Where = new ArrayList<String>();
 		this.Spawner = new ArrayList<Spawner>();
+		this.TC = new TimeCalculator();
 	}
 	
 	public ArrayList<String> getKeyWords() {
@@ -37,11 +49,14 @@ public class WaveSpawn extends Populators {
 		keys.add("MaxActive");
 		keys.add("SpawnCount");
 		keys.add("WaitBeforeStarting");
+		keys.add("WaitForAllSpawned");
+		keys.add("WaitForAllDead");
 		keys.add("WaitBetweenSpawns");
 		keys.add("WaitBetweenSpawnsAfterDeath");
 		keys.add("TotalCurrency");
 		keys.add("Name");
 		keys.add("Support");
+		keys.add("Where");
 		return keys;
 	}
 	
@@ -64,6 +79,10 @@ public class WaveSpawn extends Populators {
 			}
 			float v = Float.parseFloat(value);
 			this.WaitBeforeStarting = v;
+		} else if(key.equals("WaitForAllSpawned")) {
+			this.WaitForAllSpawned = value;
+		} else if(key.equals("WaitForAllDead")) {
+			this.WaitForAllDead = value;
 		} else if(key.equals("WaitBetweenSpawns")) {
 			float v = Float.parseFloat(value);
 			this.WaitBetweenSpawns = v;
@@ -77,11 +96,14 @@ public class WaveSpawn extends Populators {
 			this.Name = value;
 		} else if(key.equals("Support")) {
 			this.Support = value;
+		} else if(key.equals("Where")) {
+			this.Where.add(value);
 		}
 	}
 	
 	public WaveSpawn clone() {
 		WaveSpawn ws = new WaveSpawn();
+		ws.setMapName(this.MapName);
 		ws.setMaxActive(this.MaxActive);
 		ws.setName(this.Name);
 		ws.setSpawnCount(this.SpawnCount);
@@ -92,8 +114,22 @@ public class WaveSpawn extends Populators {
 		ws.setTotalCurrency(this.TotalCurrency);
 		ws.setWaitBeforeStarting(this.WaitBeforeStarting);
 		ws.setWaitBetweenSpawns(this.WaitBetweenSpawns);
+		ws.setWaitForAllSpawned(this.WaitForAllSpawned);
+		ws.setWaitForAllDead(this.WaitForAllDead);
+		ws.setWhere(this.Where);
 		ws.setWaitBetweenSpawnsAfterDeath(this.WaitBetweenSpawnsAfterDeath);
 		return ws;
+	}
+	
+	public float getMinTime() {
+		double v = TC.getWalkingTimeFromWaveSpawn(this.MapName, this);
+		//System.out.println(v + " : " + (float)v);
+		return (float)v;
+	}
+	
+	public float getNoWalkTime() {
+		float v = ((this.TotalCount / this.SpawnCount) * this.WaitBetweenSpawns) - this.WaitBetweenSpawns + this.WaitBeforeStarting;
+		return v;
 	}
 	
 	public int getTotalBotHealth() {
@@ -129,6 +165,60 @@ public class WaveSpawn extends Populators {
 		return r;
 	}
 	
+	public int[] getBotTypes() {
+		int[] types = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+		for(Spawner s : this.Spawner) {
+			if(s.getClass() == TFBot.class) {
+				TFBot bot = (TFBot) s;
+				String c = bot.getClassName();
+				if(c.equalsIgnoreCase("Scout")) {
+					types[1] += this.TotalCount;
+				} else if(c.equalsIgnoreCase("Soldier")) {
+					types[2] += this.TotalCount;
+				} else if(c.equalsIgnoreCase("Pyro")) {
+					types[3] += this.TotalCount;
+				} else if(c.equalsIgnoreCase("Demoman")) {
+					if(bot.SubClass.equalsIgnoreCase("DemoKnight")) {
+						types[10] += this.TotalCount;
+					}
+					types[4] += this.TotalCount;
+				} else if(c.equalsIgnoreCase("HeavyWeapons") || c.equalsIgnoreCase("Heavy")) {
+					types[5] += this.TotalCount;
+				} else if(c.equalsIgnoreCase("Engineer")) {
+					types[6] += this.TotalCount;
+				} else if(c.equalsIgnoreCase("Medic")) {
+					types[7] += this.TotalCount;
+				} else if(c.equalsIgnoreCase("Sniper")) {
+					types[8] += this.TotalCount;
+				} else if(c.equalsIgnoreCase("Spy")) {
+					types[9] += this.TotalCount;
+				} else {
+					types[0]++;
+				}
+			} else if (s.getClass() == Squad.class) {
+				Squad squad = (Squad) s;
+				int[] temp = squad.getBotTypes();
+				int botsInSquad = 0;
+				while(botsInSquad < this.TotalCount) {
+					for(int i = 0; i < temp.length; i++) {
+						botsInSquad += temp[i];
+						if(botsInSquad > this.TotalCount) { //Check if we went over
+							//Add enough to reach, no cluse how the game actually handles these
+							//There was 8 that I found I think it's usually the random choice ones.
+							types[i] += (temp[i] - (botsInSquad - this.TotalCount)); 
+							break;
+						} else {
+							types[i] += temp[i];
+						}
+					} 
+				}
+			} else {
+				types[0]++;
+			}
+		}
+		return types;
+	}
+	
 	public String getTemplate() {
 		return Template;
 	}
@@ -161,6 +251,18 @@ public class WaveSpawn extends Populators {
 	}
 	public float getWaitBetweenSpawns() {
 		return WaitBetweenSpawns;
+	}
+	public String getWaitForAllSpawned() {
+		return WaitForAllSpawned;
+	}
+	public void setWaitForAllSpawned(String waitForAllSpawned) {
+		WaitForAllSpawned = waitForAllSpawned;
+	}
+	public String getWaitForAllDead() {
+		return WaitForAllDead;
+	}
+	public void setWaitForAllDead(String waitForAllDead) {
+		WaitForAllDead = waitForAllDead;
 	}
 	public void setWaitBetweenSpawns(float waitBetweenSpawns) {
 		WaitBetweenSpawns = waitBetweenSpawns;
@@ -198,15 +300,31 @@ public class WaveSpawn extends Populators {
 	public void setSpawner(ArrayList<Spawner> spawner) {
 		Spawner = spawner;
 	}
+	public ArrayList<String> getWhere() {
+		return Where;
+	}
+	public void setWhere(ArrayList<String> where) {
+		Where = where;
+	}
+	public String getMapName() {
+		return MapName;
+	}
+	public void setMapName(String mapName) {
+		//System.out.println(mapName);
+		MapName = mapName;
+	}
 
 	@Override
 	public String toString() {
-		return "\n\t WaveSpawn [Template=" + Template + ", TotalCount=" + TotalCount + ", MaxActive=" + MaxActive
-				+ ", SpawnCount=" + SpawnCount + ", WaitBeforeStarting=" + WaitBeforeStarting + ", WaitBetweenSpawns="
-				+ WaitBetweenSpawns + ", WaitBetweenSpawnsAfterDeath=" + WaitBetweenSpawnsAfterDeath
-				+ ", TotalCurrency=" + TotalCurrency + ", Name=" + Name + ", Support=" + Support + ", Spawner="
-				+ Spawner + "]";
+		return "WaveSpawn [MapName=" + MapName + ", Template=" + Template + ", TotalCount=" + TotalCount
+				+ ", MaxActive=" + MaxActive + ", SpawnCount=" + SpawnCount + ", WaitBeforeStarting="
+				+ WaitBeforeStarting + ", WaitForAllSpawned=" + WaitForAllSpawned + ", WaitForAllDead=" + WaitForAllDead
+				+ ", WaitBetweenSpawns=" + WaitBetweenSpawns + ", WaitBetweenSpawnsAfterDeath="
+				+ WaitBetweenSpawnsAfterDeath + ", TotalCurrency=" + TotalCurrency + ", Name=" + Name + ", Support="
+				+ Support + ", Where=" + Where + "]";
 	}
+
+	
 	
 	
 

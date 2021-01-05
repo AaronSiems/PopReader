@@ -12,6 +12,9 @@ public class TFBot extends Spawner {
 	protected float Scale; //Default -1.0 TODO should default to class hp
 	protected Skill Skill; //Default Easy
 	protected String Template;
+	protected String SubClass;
+	protected String ClassIcon;
+	protected double Speed;
 	
 	public TFBot() {
 		this.Health = 0;
@@ -19,6 +22,8 @@ public class TFBot extends Spawner {
 		//this.Name = this.Class;
 		this.Scale = -1.0f;
 		this.Skill = popEnums.Skill.Easy;
+		this.SubClass = "";
+		this.Speed = 1.0;
 	}
 	
 	public ArrayList<String> getKeyWords() {
@@ -27,6 +32,7 @@ public class TFBot extends Spawner {
 		keys.add("Name ");
 		keys.add("Class ");
 		keys.add("Scale");
+		keys.add("ClassIcon");
 		//Begin skill
 		keys.add("Easy");
 		keys.add("Normal");
@@ -34,6 +40,7 @@ public class TFBot extends Spawner {
 		keys.add("Expert");
 		//End skill
 		keys.add("Template");
+		keys.add("move speed bonus");
 		return keys;
 	}
 	
@@ -42,27 +49,39 @@ public class TFBot extends Spawner {
 			int v = Integer.parseInt(value);
 			this.Health = v;
 		} else if(key.equals("Name ")) {
+			if((value.equalsIgnoreCase("Demoknight") || value.equalsIgnoreCase("Samurai Demo")) && this.SubClass.length() == 0) {
+				this.SubClass = "DemoKnight";
+			}
 			this.Name = value;
 		} else if(key.equalsIgnoreCase("Class ")) {
 			if(this.Health == 0) {
 				if(value.equalsIgnoreCase("Scout")) {
 					this.Health = 125;
+					this.Speed = 1.33;
 				} else if(value.equalsIgnoreCase("Soldier")) {
 					this.Health = 200;
+					this.Speed = 0.8;
 				} else if(value.equalsIgnoreCase("Pyro")) {
 					this.Health = 175;
+					this.Speed = 1.0;
 				} else if(value.equalsIgnoreCase("Demoman")) {
 					this.Health = 175;
+					this.Speed = 0.93;
 				} else if(value.equalsIgnoreCase("HeavyWeapons") || value.equalsIgnoreCase("Heavy")) {
 					this.Health = 300;
+					this.Speed = 0.77;
 				} else if(value.equalsIgnoreCase("Engineer")) {
 					this.Health = 125;
+					this.Speed = 1;
 				} else if(value.equalsIgnoreCase("Medic")) {
 					this.Health = 150;
+					this.Speed = 1.07;
 				} else if(value.equalsIgnoreCase("Sniper")) {
 					this.Health = 125;
+					this.Speed = 1.0;
 				} else if(value.equalsIgnoreCase("Spy")) {
 					this.Health = 125;
+					this.Speed = 1.07;
 				}
 			}
 			this.Class = value;
@@ -80,6 +99,14 @@ public class TFBot extends Spawner {
 		} else if(key.equals("Template")) {
 			//TODO maybe
 			this.Template = value;
+		} else if(key.equals("ClassIcon")) {
+			if((value.equalsIgnoreCase("demoknight") || value.equalsIgnoreCase("demoknight_samurai"))&& this.SubClass.length() == 0) {
+				this.SubClass = "DemoKnight";
+			}
+			this.ClassIcon = value;
+		} else if(key.equals("move speed bonus")) {
+			float v = Float.parseFloat(value);
+			this.Speed = (double)Math.round(this.Speed * v * 100000) / 100000; //Rounds 4 decimal places
 		}
 	}
 	
@@ -91,7 +118,8 @@ public class TFBot extends Spawner {
 		bot.setScale(this.Scale);
 		bot.setSkill(this.Skill);
 		bot.setTemplate(this.Template);
-		
+		bot.setSubClass(this.SubClass);
+		bot.setSpeed(this.Speed);		
 		return bot;
 	}
 	
@@ -118,6 +146,18 @@ public class TFBot extends Spawner {
 	}
 	public void setTemplate(String template) {
 		Template = template;
+	}
+	public String getSubClass() {
+		return SubClass;
+	}
+	public void setSubClass(String subClass) {
+		SubClass = subClass;
+	}
+	public double getSpeed() {
+		return Speed;
+	}
+	public void setSpeed(double speed) {
+		Speed = speed;
 	}
 
 	@Override

@@ -1,8 +1,13 @@
 package popClasses;
 
 import java.util.ArrayList;
+import java.util.Collection;
+
+import com.scalified.tree.TreeNode;
+import com.scalified.tree.multinode.ArrayMultiTreeNode;
 
 import popAbstracts.Populators;
+import utils.NodeData;
 
 public class Wave extends Populators {
 	
@@ -37,6 +42,82 @@ public class Wave extends Populators {
 		w.setWaitWhenDone(this.WaitWhenDone);
 		w.setWaveSpawn(this.WaveSpawn);
 		return w;
+	}
+	
+	
+	//These have to go outside the method so the root.forEach(stuff) doesn't complain
+	private NodeData tempNode;
+	private String waitFor;
+	private float tempTime; //(And n.forEach(stuff)
+	private float time;
+	public float getMinTime() {
+		 time = 0;
+		TreeNode<NodeData> root = new ArrayMultiTreeNode<NodeData>(new NodeData("root", 0f));
+		for(int waveSpawn = 0; waveSpawn < this.WaveSpawn.size(); waveSpawn++) {
+			WaveSpawn s = this.WaveSpawn.get(waveSpawn);
+			//Not a support wave
+			//Min time is longer than any concurrent spawns
+			if(s.getSupport() != "") {
+				continue;
+			}
+			
+			if(s.getWaitForAllSpawned() == "" && s.getWaitForAllDead() != "") {
+				waitFor = s.getWaitForAllDead();
+			} else {
+				waitFor = s.getWaitForAllSpawned();
+			}
+			TreeNode<NodeData> node = new ArrayMultiTreeNode<NodeData>(new NodeData(s.getName(), s.getMinTime()));
+			if(waitFor == "") { //Spawns first
+				root.add(node);
+			} else { //Waits for another waveSpawn to end
+				float largest = -1;				
+				root.forEach(nd -> {
+					if(nd.data().getName().equalsIgnoreCase(waitFor)) {
+						//System.out.println("\t" + nd.data().getTime() + " : " + largest);
+						if(nd.data().getTime() > largest) {
+							tempNode = nd.data();
+						}
+					}
+				});
+				try {
+					root.find(tempNode).add(node);
+				} catch (NullPointerException e) {
+					System.out.println("Null error in wave.getMinTime()");
+					root.add(node);
+				}
+			}
+		}
+		
+		//System.out.println(root.toString());
+		
+		Collection<? extends TreeNode<NodeData>> topLevelNodes =  root.subtrees();
+		topLevelNodes.forEach(n -> {
+			n.forEach(n2 ->{
+				if(n2.isLeaf()) {
+					tempTime = 0;
+					TreeNode<NodeData> n3 = n2;
+					tempTime += n3.data().getTime();
+					while (!n3.isRoot()) {
+						n3 = n3.parent();
+						tempTime += n3.data().getTime();
+					}
+					
+					if(tempTime > time) {
+						time = tempTime;
+					}
+				}
+			});
+		});
+		
+		return time;
+	}
+	
+	public int getTotalMoneyNoBonus() {
+		int m = 0;
+		for(WaveSpawn s : this.WaveSpawn) {
+			m += s.getTotalCurrency();
+		}
+		return m;
 	}
 	
 	public int getTotalBotHealth() {
@@ -85,6 +166,19 @@ public class Wave extends Populators {
 			}
 		}
 		return count;
+	}
+	
+	public int[] getBotTypes() {
+		int[] types = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+		for(WaveSpawn w : this.WaveSpawn) {
+			if(w.getSupport().length() == 0) { //Skip support
+				int[] temp = w.getBotTypes();
+				for(int i = 0; i < temp.length; i++) {
+					types[i] += temp[i];
+				}
+			}
+		}
+		return types;
 	}
 	
 	public ArrayList<WaveSpawn> getWaveSpawn() {

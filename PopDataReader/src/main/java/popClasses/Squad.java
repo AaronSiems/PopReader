@@ -59,6 +59,46 @@ public class Squad extends Spawner{
 		return hp;
 	}
 	
+	/**
+	 * @return 11 length array for all class types; 0 holding unknown/tanks 11 holding demoknights
+	 */
+	public int[] getBotTypes() {
+		int[] types = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+		for(Spawner s : this.Spawner) {
+			if(s.getClass() == TFBot.class) {
+				TFBot bot = (TFBot) s;
+				String c = bot.getClassName();
+				if(c.equalsIgnoreCase("Scout")) {
+					types[1]++;
+				} else if(c.equalsIgnoreCase("Soldier")) {
+					types[2]++;
+				} else if(c.equalsIgnoreCase("Pyro")) {
+					types[3]++;
+				} else if(c.equalsIgnoreCase("Demoman")) {
+					if(bot.SubClass.equalsIgnoreCase("DemoKnight")) {
+						types[10]++;
+					}
+					types[4]++;
+				} else if(c.equalsIgnoreCase("HeavyWeapons") || c.equalsIgnoreCase("Heavy")) {
+					types[5]++;
+				} else if(c.equalsIgnoreCase("Engineer")) {
+					types[6]++;
+				} else if(c.equalsIgnoreCase("Medic")) {
+					types[7]++;
+				} else if(c.equalsIgnoreCase("Sniper")) {
+					types[8]++;
+				} else if(c.equalsIgnoreCase("Spy")) {
+					types[9]++;
+				} else {
+					types[0]++;
+				}
+			} else {
+				types[0]++;
+			}
+		}
+		return types;
+	}
+	
 	public float getFormationSize() {
 		return FormationSize;
 	}

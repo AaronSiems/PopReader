@@ -1,6 +1,13 @@
-version '0.1.0'
+version '0.2.0'
 
 apply plugin:'java'
+
+repositories {
+    mavenCentral()
+  }
+dependencies {
+	compile 'com.scalified:tree:0.2.5'
+}
 
 sourceSets {
     main {
@@ -15,5 +22,5 @@ jar {
     attributes 'Main-Class': 'controller.Main'
   }
   baseName = 'pop-data-reader'
-  version = '0.1.0'
+  version = '0.2.0'
 }

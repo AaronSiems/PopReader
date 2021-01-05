@@ -19,12 +19,51 @@ public class PopReader {
 	
 	private String fileName;
 	private TemplateReader TR;
+	private String mapName;
+	
+	/*Debug list for bel
+	private ArrayList<String> classNames;
+	private ArrayList<String> robotNames; */
 	
 	public PopReader() { 
 		TR = new TemplateReader();
 		TR.getTemplates();
+		/* Bel Debug
+		classNames = new ArrayList<String>();
+		classNames.add("Spy");
+		classNames.add("Sniper");
+		classNames.add("Scout");
+		classNames.add("Soldier");
+		classNames.add("Pyro");
+		classNames.add("Heavyweapons");
+		classNames.add("Demoman");
+		classNames.add("Medic");
+		robotNames = new ArrayList<String>();
+		robotNames.add("Spy");
+		robotNames.add("Sniper");
+		robotNames.add("Scout");
+		robotNames.add("Soldier");
+		robotNames.add("Pyro");
+		robotNames.add("Heavyweapons");
+		robotNames.add("Demoman");
+		robotNames.add("Medic");
+		robotNames.add("Crit Scout");
+		robotNames.add("Crit Soldier");
+		robotNames.add("Crit Pyro");
+		robotNames.add("Crit Heavy");
+		robotNames.add("Crit Demo"); */
 		//System.out.println(TR.allTemplates());
 	}
+	
+	/*Debug method for bel
+	private ArrayList<String> inList(ArrayList<String> list, String input, String type, int line){
+		if(list.contains(input)) {
+			return list;
+		} else {
+			System.out.println("Found different than expected " + type + " on line " + line + ": \"" + input + "\"");
+			return list;
+		}
+	} */
 	
 	public Population read(String filePath) {
 		
@@ -33,10 +72,15 @@ public class PopReader {
 		TFBot b = new TFBot();
 		Wave w = new Wave();
 		WaveSpawn ws = new WaveSpawn();
+		ws.setMapName(mapName);
 		Squad sq = new Squad();
 		Tank t = new Tank();
 		
 		fileName = filePath;
+		
+		//CHANGE IF CHANGED IN MAIN
+		String defaultFilePath = "/valve_population/";
+		mapName = filePath.substring(defaultFilePath.length());
 		
 		InputStream is = Main.class.getResourceAsStream(fileName);
 		BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(is));
@@ -51,7 +95,7 @@ public class PopReader {
 		Boolean inWaveSpawn = false;
 		Boolean inSquad = false; //Can be Squad or RandomChoice
 		Boolean inTank = false;
-		int brackets = 0;
+		int brackets = 0; //Foolish me thinking I could get away with just 1 bracket, should rename to popBrackets
 		int missionBrackets = -1;
 		int botBrackets = -1;
 		int waveBrackets = -1;
@@ -67,6 +111,8 @@ public class PopReader {
 		ArrayList<String> waveSpawnKeys = ws.getKeyWords();
 		ArrayList<String> squadKeys = sq.getKeyWords();
 		ArrayList<String> tankKeys = t.getKeyWords();
+		
+		
 		
 	    try {
 			while( (line = bufferedReader.readLine()) != null )
@@ -163,6 +209,7 @@ public class PopReader {
 							brackets++;
 							waveSpawnBrackets = brackets;
 						}
+						ws.setMapName(mapName);
 					} else if(tempLine.contains("Squad") || tempLine.contains("RandomChoice")) {
 						//System.out.println("Entering squad Line: " + lineNum);
 						inSquad = true;
@@ -209,7 +256,8 @@ public class PopReader {
 							}
 							
 							for(String s : botKeys) {
-								if(tempLine.contains(s)) {
+								//Exclude item names for now... TODO
+								if(tempLine.contains(s) && !tempLine.contains("ItemName")) {
 									int loc = tempLine.indexOf(s) + s.length();
 									String value = "";
 									for(int i = 0; i < tempLine.substring(loc).length(); i++) {
@@ -236,6 +284,13 @@ public class PopReader {
 									} else {
 										b.setKeyWord(s, value);
 									}
+									
+									/*Debug for bel
+									if(s.equalsIgnoreCase("Class ")) {
+										classNames = inList(classNames, value, "Class Name (bot mission)", lineNum);
+									} else if(s.equalsIgnoreCase("Name ")) {
+										robotNames = inList(robotNames, value, "Bot Name (bot mission)", lineNum);
+									} */
 									//System.out.println("Key: " + s + " Value: " + value);
 								}
 							}
@@ -324,7 +379,8 @@ public class PopReader {
 								}
 								
 								for(String s : botKeys) {
-									if(tempLine.contains(s)) {
+									//Exclude item names for now... TODO
+									if(tempLine.contains(s) && !tempLine.contains("ItemName")) {
 										int loc = tempLine.indexOf(s) + s.length();
 										String value = "";
 										for(int i = 0; i < tempLine.substring(loc).length(); i++) {
@@ -351,6 +407,13 @@ public class PopReader {
 										} else {
 											b.setKeyWord(s, value);
 										}
+										
+										/*Debug for bel
+										if(s.equalsIgnoreCase("Class ")) {
+											classNames = inList(classNames, value, "Class Name (bot wave)", lineNum);
+										} else if(s.equalsIgnoreCase("Name ")) {
+											robotNames = inList(robotNames, value, "Bot Name (bot wave)", lineNum);
+										}*/
 										//System.out.println("Key: " + s + " Value: " + value);
 									}
 								}
@@ -451,6 +514,13 @@ public class PopReader {
 										}
 										inQuotes = false;
 										sq.setKeyWord(s, value);
+										
+										/*Debug for bel
+										if(s.equalsIgnoreCase("Class ")) {
+											classNames = inList(classNames, value, "Class Name (s)", lineNum);
+										} else if(s.equalsIgnoreCase("Name ")) {
+											robotNames = inList(robotNames, value, "Bot Name (s)", lineNum);
+										}*/
 										//System.out.println("Key: " + s + " Value: " + value);
 									}
 								}
@@ -470,6 +540,7 @@ public class PopReader {
 										inWaveSpawn = false;
 										w.addWaveSpawn(ws.clone());
 										ws = new WaveSpawn();
+										ws.setMapName(mapName);
 										brackets--;
 										waveSpawnBrackets = -1;
 									} else {

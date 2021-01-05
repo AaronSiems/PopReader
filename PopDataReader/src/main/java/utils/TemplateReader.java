@@ -40,8 +40,10 @@ public class TemplateReader {
 			String line;
 			
 			Boolean inBot = false;
+			Boolean inRevert = false;
 			int brackets = 0;
 			int tempBrackets = -1;
+			int revertBrackets = -1;
 			TFBot tempBot = new TFBot();
 			ArrayList<String> botKeys = tempBot.getKeyWords();
 			
@@ -75,58 +77,84 @@ public class TemplateReader {
 					}
 					if(tempLine.length() <= 0) { continue; } //Blank line or only comment, go to next line
 					
-					if(inBot) {
+					if(inBot && !inRevert) {
+						//This ignores things that happen after all gate bots are lost.
+						if(tempLine.contains("RevertGateBotsBehavior")) {
+							if(tempLine.contains("{")) {
+								brackets++;
+							}
+							inRevert = true;
+						} else {
+							if(tempLine.contains("{")) {
+								if(tempBrackets != -1) {
+									brackets++;
+								} else {
+									brackets++;
+									tempBrackets = brackets;
+								}
+							}
+							if(tempLine.contains("}")) {
+								if(tempBrackets == brackets) {
+									inBot = false;
+									bots.add(tempBot.clone());
+									tempBot = new TFBot();
+									brackets--; 
+								} else {
+									brackets--;
+								}
+							}
+							for(String s : botKeys) {
+								if(tempLine.contains(s)) {
+									int loc = tempLine.indexOf(s) + s.length();
+									String value = "";
+									for(int i = 0; i < tempLine.substring(loc).length(); i++) {
+										char c = tempLine.substring(loc).charAt(i);
+										if(c == ' ' && !quotes) { 
+											continue;
+										}
+										if(c == '\t' && !quotes) { 
+											continue;
+										}
+										if(c == '"') {
+											if(quotes) {
+												quotes = false;
+											} else {
+												quotes = true;
+											}
+											continue;
+										}
+										value += c;
+									}
+									quotes = false;
+									tempBot.setKeyWord(s, value);
+								}
+							}
+						}
+						
+					} else if(inRevert) {
 						if(tempLine.contains("{")) {
-							if(tempBrackets != -1) {
+							if(revertBrackets != -1) {
 								brackets++;
 							} else {
 								brackets++;
-								tempBrackets = brackets;
+								revertBrackets = brackets;
 							}
 						}
 						if(tempLine.contains("}")) {
-							if(tempBrackets == brackets) {
-								inBot = false;
-								bots.add(tempBot.clone());
-								tempBot = new TFBot();
+							if(revertBrackets == brackets) {
+								inRevert = false;
 								brackets--; 
 							} else {
 								brackets--;
 							}
 						}
-						for(String s : botKeys) {
-							if(tempLine.contains(s)) {
-								int loc = tempLine.indexOf(s) + s.length();
-								String value = "";
-								for(int i = 0; i < tempLine.substring(loc).length(); i++) {
-									char c = tempLine.substring(loc).charAt(i);
-									if(c == ' ' && !quotes) { 
-										continue;
-									}
-									if(c == '\t' && !quotes) { 
-										continue;
-									}
-									if(c == '"') {
-										if(quotes) {
-											quotes = false;
-										} else {
-											quotes = true;
-										}
-										continue;
-									}
-									value += c;
-								}
-								quotes = false;
-								tempBot.setKeyWord(s, value);
-							}
-						}
-						
 					} else {
 						if(tempLine.contains("T_TF")) {
 							int loc = tempLine.indexOf("T_TF");
 							String templateName;
 							if(tempLine.contains("{")) {
 								brackets++;
+								tempBrackets = brackets;
 								int loc2 = tempLine.indexOf("{");
 								templateName = tempLine.substring(loc, loc2);
 							} else {

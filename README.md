@@ -7,6 +7,11 @@
  * Read templates from within pop (currently requires any files with templates to go in the template folder)
  * Time based stats (Estimated total bots including missions and related)
 
+# Version 0.2.0
+* Started to include bot walking in the minimum time (Currently inaccurate)
+* Can count bots classes but currently is commented out
+* Folder of unmodified pop files was added but currently isn't used. A few typos in the pop files were corrected in the files the program uses.
+ 
 # Version 0.1.0 (Initial commit)
 ### Known Issues
 * Keywords are case sensitive and can be false-positivly identified if they are located within another keyword (ie Health and useBossHealth) however most of these have been accounted for currently.

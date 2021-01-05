@@ -1,5 +1,6 @@
 package popClasses;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 
 import popAbstracts.Populators;
@@ -13,6 +14,7 @@ public class Population {
 	private int AddSentryBusterWhenKillCountExceeds; //Default = 15
 	private Boolean CanBotsAttackWhileInSpawnRoom; //No || False = 0, else 1
 	private ArrayList<Populators> Populators;
+	DecimalFormat df = new DecimalFormat("#,###.##");
 	
 	public Population() {
 		this.StartingCurrency = 0;
@@ -57,6 +59,74 @@ public class Population {
 				this.CanBotsAttackWhileInSpawnRoom = true;
 			}
 		}
+	}
+	
+	public float getMinTime() {
+		float time = 0;
+		for(Populators p : this.Populators) {
+			if(p.getClass() == Wave.class) {
+				Wave w = (Wave) p;
+				time += w.getMinTime();
+			}
+		}
+		return time;
+	}
+	
+	public String getPerWaveMinTime() {
+		String out = "";
+		float time = 0;
+		int count = 0;
+		for(Populators p : this.Populators) {
+			if(p.getClass() == Wave.class) {
+				count++;
+				Wave w = (Wave) p;
+				time = w.getMinTime();
+				int r = (int) (time % 60);
+				time = Math.round((time - r) / 60 * 100) / 100;
+				out += "\n\t\tWave: " + count + ", Min. Time: " + time + " minutes and " + r + " seconds.";
+			}
+		}
+		return out;
+	}
+	
+	public int getTotalMoneyNoBonus() {
+		int m = 0;
+		for(Populators p : this.Populators) {
+			if(p.getClass() == Wave.class) {
+				Wave w = (Wave) p;
+				m += w.getTotalMoneyNoBonus();
+			}
+		}
+		return m;
+	}
+	
+	public int getTotalMoneyWithBonus() {
+		int m = 0;
+		//int count = 0;
+		for(Populators p : this.Populators) {
+			if(p.getClass() == Wave.class) {
+				Wave w = (Wave) p;
+				m += w.getTotalMoneyNoBonus();
+				m += 100;
+			}
+		}
+		m -= 100; //No bonus last wave
+		return m;
+	}
+	
+	public String getPerWaveMoneyNoBonus() {
+		String out = "";
+		int count = 0;
+		float m = 0;
+		for(Populators p : this.Populators) {
+			if(p.getClass() == Wave.class) {
+				count++;
+				Wave w = (Wave) p;
+				m = w.getTotalMoneyNoBonus();
+				out += "\n\t\tWave: " + count + ", Total Money: $" + df.format(m) + " Min. Money needed for bonus: $" + df.format(m*.95);
+			}
+		}
+		return out;
 	}
 	
 	public int getWaveBotHealth() {
@@ -148,6 +218,20 @@ public class Population {
 		return out;
 	}
 	
+	public int[] getBotTypes() {
+		int[] types = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+		for(Populators p : this.Populators) {
+			if(p.getClass() == Wave.class) {
+				Wave w = (Wave) p;
+				int[] temp = w.getBotTypes();
+				for(int i = 0; i < temp.length; i++) {
+					types[i] += temp[i];
+				}
+			}
+		}
+		return types;
+	}
+	
 	public int getStartingCurrency() {
 		return StartingCurrency;
 	}
@@ -204,13 +288,21 @@ public class Population {
 	}
 
 	public String getStats() {
+		float time = this.getMinTime();
+		int sec = (int) (time % 60);
+		time = Math.round((time - sec) / 60 * 100) / 100;
 		return "\tTotal bot health from waves: " + this.getWaveBotHealth() + "\n"
 		+ "\tTotal bot health from waves w/o support: " + this.getWaveBotHealthNoSupport() + "\n"
 		+ "\tTotal tank health from waves: " + this.getWaveTankHealth() + "\n"
 		+ "\tTotal bots from waves: " + this.getWaveBotCount() + "\n"
-		+ "\tWave breakdown: " + this.getPerWaveBotCount() + "\n"
+		//+ "\tWave breakdown: " + this.getPerWaveBotCount() + "\n"
 		+ "\tTotal bots from waves w/o support: " + this.getWaveBotCountNoSupport() + "\n"
-		+ "\tWave breakdown: " + this.getPerWaveBotCountNoSupport() + "\n";
+		//+ "\tWave breakdown: " + this.getPerWaveBotCountNoSupport() + "\n"
+		+ "\tTotal currency w/o bonus: $" + df.format(this.getTotalMoneyNoBonus()) + "\n"
+		//+ "\tWave breakdown: " + this.getPerWaveMoneyNoBonus() + "\n"
+		+ "\tTotal currency with bonus: $" + df.format(this.getTotalMoneyWithBonus()) + "\n"
+		+ "\tMin time (ignoring f4): " + time + " minutes and " + sec + " seconds \n"
+		+ "\tWave breakdown: " + this.getPerWaveMinTime() + "\n";
 	}
 	
 }
